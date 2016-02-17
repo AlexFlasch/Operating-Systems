@@ -14,9 +14,11 @@ typedef struct {
     int assignment1;
     int exam1;
     int exam2;
-    int finalGrade;
+    double finalGrade;
 } Student;
 
 Student* convertFileToUsers();
+
+int studentsLength();
 
 #endif
