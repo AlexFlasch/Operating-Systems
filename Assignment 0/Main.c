@@ -20,48 +20,41 @@ double* getStandardDeviations(Student *s, double *avgs);
 void printGradingScheme(Student *students);
 
 int main(int argc, char *argv[]) {
-    // create a buffer in console so output is more easily readable
-    printf("\n\n");
-
     // get array of structs from read file
-    printf("argv[1] = %s", argv[1]);
     students = convertFileToUsers(argv[1]);
-    // fclose(file);
-    //
-    // length = studentsLength();
-    //
-    // // calculate all required user data
-    // int *minGrades = getMinGrades(students);
-    // int *maxGrades = getMaxGrades(students);
-    // double *avgGrades = getAvgGrades(students);
-    // double *stdDeviations = getStandardDeviations(students, avgGrades);
-    //
-    // // output student data
-    // printf("%6s, %10s, %9s, %5s, %5s, %5s, %4s, %4s, %11s, %5s, %5s, %5s\n",
-    //     "Id", "First Name", "Last Name", "Quiz1", "Quiz2", "Quiz3", "Lab1", "Lab2",
-    //     "Assignment1", "Exam1", "Exam2", "Grade");
-    // int i;
-    // for(i = 0; i < length; i++) {
-    //     Student s = students[i * sizeof(Student)];
-    //     printf("%6d, %10s, %9s, %5d, %5d, %5d, %4d, %4d, %11d, %5d, %5d, %5.2f\n",
-    //         s.id, s.firstName, s.lastName, s.quiz1, s.quiz2, s.quiz3, s.lab1, s.lab2,
-    //         s.assignment1, s.exam1, s.exam2, s.finalGrade);
-    // }
-    // printf("%6s, %28d, %5d, %5d, %4d, %4d, %11d, %5d, %5d, %5.2f\n", "Min",
-    //     minGrades[0], minGrades[1], minGrades[2], minGrades[3], minGrades[4],
-    //     minGrades[5], minGrades[6], minGrades[7], minGrades[8]);
-    // printf("%6s, %28d, %5d, %5d, %4d, %4d, %11d, %5d, %5d, %5.2f\n", "Max",
-    //     maxGrades[0], maxGrades[1], maxGrades[2], maxGrades[3], maxGrades[4],
-    //     maxGrades[5], maxGrades[6], maxGrades[7], maxGrades[8]);
-    // printf("%6s, %28.2f, %5.2f, %5.2f, %4.2f, %4.2f, %11.2f, %5.2f, %5.2f, %5.2f\n", "Avg",
-    //     avgGrades[0], avgGrades[1], avgGrades[2], avgGrades[3], avgGrades[4],
-    //     avgGrades[5], avgGrades[6], avgGrades[7], avgGrades[8]);
-    // printf("%14s, %20.2f, %5.2f, %5.2f, %4.2f, %4.2f, %11.2f, %5.2f, %5.2f, %5.2f\n", "Std. Deviation",
-    //     stdDeviations[0], stdDeviations[1], stdDeviations[2], stdDeviations[3], stdDeviations[4],
-    //     stdDeviations[5], stdDeviations[6], stdDeviations[7], stdDeviations[8]);
 
-    // create another buffer in console again for readability
-    printf("\n\n");
+    length = studentsLength();
+
+    // calculate all required user data
+    int *minGrades = getMinGrades(students);
+    int *maxGrades = getMaxGrades(students);
+    double *avgGrades = getAvgGrades(students);
+    double *stdDeviations = getStandardDeviations(students, avgGrades);
+
+    // output student data
+    FILE *output = fopen(argv[2], "w");
+    fprintf(output, "%6s, %10s, %9s, %5s, %5s, %5s, %4s, %5s, %11s, %5s, %5s, %5s\n",
+        "Id", "First Name", "Last Name", "Quiz1", "Quiz2", "Quiz3", "Lab1", "Lab2",
+        "Assignment1", "Exam1", "Exam2", "Grade");
+    int i;
+    for(i = 0; i < length; i++) {
+        Student s = students[i * sizeof(Student)];
+        fprintf(output, "%6d, %10s, %9s, %5d, %5d, %5d, %4d, %5d, %11d, %5d, %5d, %5.2f\n",
+            s.id, s.firstName, s.lastName, s.quiz1, s.quiz2, s.quiz3, s.lab1, s.lab2,
+            s.assignment1, s.exam1, s.exam2, s.finalGrade);
+    }
+    fprintf(output, "%6s, %28d, %5d, %5d, %4d, %5d, %11d, %5d, %5d, %5.2f\n", "Min",
+        minGrades[0], minGrades[1], minGrades[2], minGrades[3], minGrades[4],
+        minGrades[5], minGrades[6], minGrades[7], minGrades[8]);
+    fprintf(output, "%6s, %28d, %5d, %5d, %4d, %5d, %11d, %5d, %5d, %5.2f\n", "Max",
+        maxGrades[0], maxGrades[1], maxGrades[2], maxGrades[3], maxGrades[4],
+        maxGrades[5], maxGrades[6], maxGrades[7], maxGrades[8]);
+    fprintf(output, "%6s, %28.2f, %5.2f, %5.2f, %4.2f, %5.2f, %11.2f, %5.2f, %5.2f, %5.2f\n", "Avg",
+        avgGrades[0], avgGrades[1], avgGrades[2], avgGrades[3], avgGrades[4],
+        avgGrades[5], avgGrades[6], avgGrades[7], avgGrades[8]);
+    fprintf(output, "%14s, %20.2f, %5.2f, %5.2f, %4.2f, %5.2f, %11.2f, %5.2f, %5.2f, %5.2f\n", "Std. Deviation",
+        stdDeviations[0], stdDeviations[1], stdDeviations[2], stdDeviations[3], stdDeviations[4],
+        stdDeviations[5], stdDeviations[6], stdDeviations[7], stdDeviations[8]);
 }
 
 int* getMinGrades(Student *s) {
@@ -218,10 +211,10 @@ int* getMaxGrades(Student *s) {
 
     // get highest final grade
     for(j = 0; j < length; j++) {
-        if(s[j * sizeof(Student)].finalGrade > highestFinalGrade)
-            highestFinalGrade = s[j * sizeof(Student)].finalGrade;
+        if(s[j * sizeof(Student)].finalGrade > highestFinalGrade) {
+            highestGrades[8] = s[j * sizeof(Student)].finalGrade;
+        }
     }
-    printf("highestFinalGrade = %f\n", highestFinalGrade);
     highestGrades[8] = highestFinalGrade;
 
     return highestGrades;
@@ -234,7 +227,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg quiz1 grade
     double avgQuiz1;
-    int sumQuiz1;
+    double sumQuiz1 = 0;
 
     for(j = 0; j < length; j++) {
         sumQuiz1 += s[j * sizeof(Student)].quiz1;
@@ -245,7 +238,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg quiz2 grade
     double avgQuiz2;
-    int sumQuiz2;
+    double sumQuiz2 = 0;
 
     for(j = 0; j < length; j++) {
         sumQuiz2 += s[j * sizeof(Student)].quiz2;
@@ -256,7 +249,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg quiz3 grade
     double avgQuiz3;
-    int sumQuiz3;
+    double sumQuiz3 = 0;
 
     for(j = 0; j < length; j++) {
         sumQuiz3 += s[j * sizeof(Student)].quiz3;
@@ -267,7 +260,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg lab1 grade
     double avgLab1;
-    int sumLab1;
+    double sumLab1 = 0;
 
     for(j = 0; j < length; j++) {
         sumLab1 += s[j * sizeof(Student)].lab1;
@@ -278,7 +271,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg lab2 grade
     double avgLab2;
-    int sumLab2;
+    double sumLab2 = 0;
 
     for(j = 0; j < length; j++) {
         sumLab2 += s[j * sizeof(Student)].lab2;
@@ -289,7 +282,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg assignment1 grade
     double avgAssignment1;
-    int sumAssignment1;
+    double sumAssignment1 = 0;
 
     for(j = 0; j < length; j++) {
         sumAssignment1 += s[j * sizeof(Student)].assignment1;
@@ -300,7 +293,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg exam1 grade
     double avgExam1;
-    int sumExam1;
+    double sumExam1 = 0;
 
     for(j = 0; j < length; j++) {
         sumExam1 += s[j * sizeof(Student)].exam1;
@@ -311,7 +304,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg exam2 grade
     double avgExam2;
-    int sumExam2;
+    double sumExam2 = 0;
 
     for(j = 0; j < length; j++) {
         sumExam2 += s[j * sizeof(Student)].exam2;
@@ -322,7 +315,7 @@ double* getAvgGrades(Student *s) {
 
     // get avg final grade
     double avgFinal;
-    int sumFinal;
+    double sumFinal = 0;
 
     for(j = 0; j < length; j++) {
         sumFinal += s[j * sizeof(Student)].finalGrade;
@@ -342,7 +335,7 @@ double* getStandardDeviations(Student *s, double *avgs) {
 
     int j;
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].quiz1 - avgs[0 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].quiz1 - avgs[0]), 2.0);
     }
 
     double denominator = length - 1;
@@ -351,98 +344,98 @@ double* getStandardDeviations(Student *s, double *avgs) {
 
     double stdDeviation = sqrt(fraction);
 
-    stdDeviations[0 * sizeof(double)] = stdDeviation;
+    stdDeviations[0] = stdDeviation;
 
     // quiz 2
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].quiz2 - avgs[1 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].quiz2 - avgs[1]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[1 * sizeof(double)] = stdDeviation;
+    stdDeviations[1] = stdDeviation;
 
     // quiz 3
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].quiz3 - avgs[2 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].quiz3 - avgs[2]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[2 * sizeof(double)] = stdDeviation;
+    stdDeviations[2] = stdDeviation;
 
     // lab 1
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].lab1 - avgs[3 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].lab1 - avgs[3]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[3 * sizeof(double)] = stdDeviation;
+    stdDeviations[3] = stdDeviation;
 
     // lab 2
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].lab2 - avgs[4 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].lab2 - avgs[4]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[4 * sizeof(double)] = stdDeviation;
+    stdDeviations[4] = stdDeviation;
 
     // assignment 1
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].assignment1 - avgs[5 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].assignment1 - avgs[5]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[5 * sizeof(double)] = stdDeviation;
+    stdDeviations[5] = stdDeviation;
 
     // exam 1
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].exam1 - avgs[6 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].exam1 - avgs[6]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[6 * sizeof(double)] = stdDeviation;
+    stdDeviations[6] = stdDeviation;
 
     // exam 2
     numerator = 0;
 
     for(j = 0; j < length; j++) {
-        numerator += pow(((double) s[j * sizeof(Student)].exam2 - avgs[7 * sizeof(double)]), 2.0);
+        numerator += pow(((double) s[j * sizeof(Student)].exam2 - avgs[7]), 2.0);
     }
 
     fraction = (numerator / denominator);
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[7 * sizeof(double)] = stdDeviation;
+    stdDeviations[7] = stdDeviation;
 
     // final grade
     numerator = 0;
@@ -455,7 +448,7 @@ double* getStandardDeviations(Student *s, double *avgs) {
 
     stdDeviation = sqrt(fraction);
 
-    stdDeviations[8 * sizeof(double)] = stdDeviation;
+    stdDeviations[8] = stdDeviation;
 
     return stdDeviations;
 }

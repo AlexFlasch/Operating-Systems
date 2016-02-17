@@ -7,6 +7,22 @@
 int numOfStudents;
 
 // --- private ---
+int getNumberOfLines(char *input) {
+    FILE *file = fopen(input, "r");
+    int lines = 0;
+
+    char character = getc(file);
+    while(character != EOF) {
+        if(character == '\n') {
+            lines++;
+        }
+        character = getc(file);
+    }
+
+    fclose(file);
+    return lines;
+}
+
 char* getField(char *line, int num) {
     char *token;
     char l[256];
@@ -56,21 +72,12 @@ double getOverallGradeForStudent(Student s) {
 
 // --- public ---
 Student* convertFileToUsers(char *input) {
-    printf("Here");
-    FILE *file = fopen("Data.csv", "r");
-
+    FILE *file = fopen(input, "r");
+    Student* students;
     int structSize = sizeof(Student);
-    int lines = 0;
 
-    char character = getc(file);
-    while(character != EOF) {
-        if(character == '\n') {
-            lines++;
-        }
-        character = getc(file);
-    }
-
-    Student* students = malloc((lines-2) * structSize); // - 2 because the first two lines aren't anything we need to read.
+    int lines = getNumberOfLines(input);
+    students = malloc((lines-2) * structSize); // - 2 because the first two lines aren't anything we need to read.
 
     char currentLine[256];
     fgets(currentLine, 256, file);
@@ -96,9 +103,9 @@ Student* convertFileToUsers(char *input) {
         students[currentLineNum * structSize] = *s;
     }
 
-    numOfStudents = currentLineNum;
-
     fclose(file);
+
+    numOfStudents = currentLineNum;
     return students;
 }
 
