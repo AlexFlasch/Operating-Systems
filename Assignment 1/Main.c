@@ -1,18 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "CommandUtils.h"
 
 int main(int argc, char *argv[]) {
-    int quit = 0;
-
     // main input loop
-    while(!quit) {
-        char *input;
+    for(;;) {
+        char *input = malloc(100);
 
-        printf(">> ");
-        input = gets(input);
+        printf("\n>> ");
+        input = fgets(input, 100, stdin);
 
         char *command = getCommand(input);
         char **args = getArgs(input);
+
+        runCommand(command, args);
     }
 }

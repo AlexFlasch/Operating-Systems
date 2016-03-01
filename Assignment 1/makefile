@@ -1,6 +1,9 @@
 CC=gcc
-CFLAGS=-I
+CFLAGS=-I.
 DEPS = CommandUtils.h
 
-all: Main.c CommandUtils.c
-	$(CC) $(CFLAGS) -o Main.c CommandUtils.h CommandUtils.c
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+all: Main.o CommandUtils.o
+	$(CC) -o shell Main.o CommandUtils.o $(CFLAGS)
