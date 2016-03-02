@@ -5,6 +5,8 @@ char* getCommand(char *input);
 
 char** getArgs(char *input);
 
-void runCommand(char *command, char **args);
+int isFileCommand(char **args);
+
+int isBackgroundCommand(char **args);
 
 #endif

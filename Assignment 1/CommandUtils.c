@@ -5,48 +5,16 @@
 
 ////////// PRIVATE //////////
 
-/*
- * Returns 1 if the command has a & argument
- * Returns 0 if the shell should wait for completion
- */
-int isBackgroundCommand(char **args) {
-    int isBackground = 0;
-
-    size_t i;
-    for(i = 0; i < sizeof(args); i++) {
-        if(strcmp(args[i], "&") == 0) {
-            isBackground = 1;
-        }
-    }
-
-    return isBackground;
-}
-
-/*
- * Returns 1 if the command's output should be piped to a file
- * Returns 0 if the command's output should be printed to the shell
- */
-int isFileCommand(char **args) {
-    int isFile = 0;
-
-    size_t i;
-    for(i = 0; i < sizeof(args); i++) {
-        if(strcmp(args[i], ">") == 0) {
-            isFile = 1;
-        }
-    }
-
-    return isFile;
-}
-
 char* getFilename(char **args) {
     char *filename;
 
-    size_t i;
-    for(i = 0; i < sizeof(args); i++) {
+    int i = 0;
+    while(args[i] != NULL) {
         if(strcmp(args[i], ">")) {
             filename = strdup(args[++i]);
+            break;
         }
+        ++i;
     }
 
     return filename;
@@ -88,11 +56,52 @@ char** splitString(char *string) {
 ////////// PUBLIC //////////
 
 /*
+ * Returns 1 if the command has a & argument
+ * Returns 0 if the shell should wait for completion
+ */
+int isBackgroundCommand(char **args) {
+    int isBackground = 0;
+
+    int i = 0;
+    while(args[i] != NULL) {
+        if(strcmp(args[i], "&") == 0) {
+            isBackground = 1;
+            break;
+        }
+        ++i;
+    }
+
+    return isBackground;
+}
+
+/*
+ * Returns 1 if the command's output should be piped to a file
+ * Returns 0 if the command's output should be printed to the shell
+ */
+int isFileCommand(char **args) {
+    int isFile = 0;
+
+    int i = 0;
+    while(args[i] != NULL) {
+        if(strcmp(args[i], ">") == 0) {
+            isFile = 1;
+            break;
+        }
+        ++i;
+    }
+
+    return isFile;
+}
+
+/*
  * Returns the first part of the user's input.
  * Generally the name of the command (ls, clear, cp, rm, etc)
  */
 char* getCommand(char *input) {
-    return splitString(input)[0];
+    char *command = splitString(input)[0];
+    command = strtok(command, "\n");
+
+    return command;
 }
 
 /*
@@ -100,52 +109,13 @@ char* getCommand(char *input) {
  * of the command string
  */
 char** getArgs(char *input) {
-    char **args = &splitString(input)[1];
+    char **args = splitString(input);
 
-    // int i = 0;
-    // while(args[i] != NULL) {
-    //     printf("%s, ", args[i]);
-    //     ++i;
-    // }
+    int i = 0;
+    while(args[i] != NULL) {
+        args[i] = strtok(args[i], "\n");
+        ++i;
+    }
 
     return args;
-}
-
-/*
- * Runs the command, this will:
- *      * fork a new process
- *      * execute the command
- *      * waits for the command to finish
- */
-void runCommand(char *command, char **args) {
-    printf("here");
-    if(strcmp(command, "quit") == 0) {
-        exit(0);
-    }
-
-    int pid = fork();
-
-    if(pid < 0) {
-        printf("Forking the child process has failed");
-        exit(1);
-    }
-
-    int isChild = 0;
-    if(pid == 0) {
-        isChild = 1;
-    }
-
-    int wait = 1;
-    int toFile = 0;
-
-    // if(isBackgroundCommand(args) == 1) {
-    //     wait = 0;
-    // }
-    // if(isFileCommand(args) == 1) {
-    //     toFile = 1;
-    // }
-
-    if(isChild == 1) {
-        execvp(command, args);
-    }
 }
