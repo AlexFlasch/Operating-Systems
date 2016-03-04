@@ -146,22 +146,14 @@ char** stripExtraneousArguments(char **args) {
     int i = 0;
     while(args[i] != NULL) {
         if(strcmp(args[i], "&") == 0) {
-            printf("Stripping &...\n");
             args[i] = args[i + 1]; // & should be at the end, so args[i] /should/ be null after this.
             return args;
         }
         if(strcmp(args[i], ">") == 0) {
-            printf("Stripping > and filename...\n");
             args[i] = args[i + 2]; // skip past both > and filename
         }
 
         ++i;
-    }
-
-    int j = 0;
-    while(args[j] != NULL) {
-        printf("%s, ", args[j]);
-        ++j;
     }
 
     return args;

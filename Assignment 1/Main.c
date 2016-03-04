@@ -4,26 +4,31 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/wait.h>
-#include <sys/resource.h>
+#include <sys/types.h>
 
 #include "CommandUtils.h"
 
 pid_t pid;
-pid_t backgroundProcess;
-int waitStatus;
+char *command;
+char **args;
 
 void runCommand(char *command, char **args);
 
 int main(int argc, char *argv[]) {
     // main input loop
-    for(;;) {
+    while(command == NULL || strcmp(command, "quit") != 0) {
+        if(command != NULL) {
+            free(command);
+            free(args);
+        }
+
         char *input = malloc(100);
 
         printf("\n>> ");
         input = fgets(input, 100, stdin);
 
-        char *command = getCommand(input);
-        char **args = getArgs(input);
+        command = getCommand(input);
+        args = getArgs(input);
 
         runCommand(command, args);
     }
@@ -36,11 +41,10 @@ int main(int argc, char *argv[]) {
  *      * waits for the command to finish
  */
 void runCommand(char *command, char **args) {
-    if(strcmp(command, "quit") == 0) {
-        free(command);
-        free(args);
-        exit(0);
-    }
+    // if(strcmp(command, "quit") == 0) {
+    //     printf("here");
+    //     exit(0);
+    // }
 
     pid = fork();
     int status;
@@ -62,51 +66,26 @@ void runCommand(char *command, char **args) {
         wait = 0;
     }
 
-    // printf("args: ");
-    //
-    // int i = 0;
-    // while(args[i] != NULL) {
-    //     printf("%s, ", args[i]);
-    //     ++i;
-    // }
-
-    // printf("toFile: %d\n", isFileCommand(args));
     if(isFileCommand(args) == 1) {
         toFile = 1;
     }
 
     if(isChild == 1) {
+        args = stripExtraneousArguments(args);
+
         if(toFile == 1) {
             char *filename = getFilename(args);
             printf("filename: %s\n", filename);
 
-            args = stripExtraneousArguments(args);
             int fileStream = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
             dup2(fileStream, 1);
             close(fileStream);
         }
-        if(wait == 1) {
-            execvp(command, args);
-            printf("\n>> ");
-            waitpid(pid, &status, 0);
-        }
-        if(wait == 0) {
-            stripExtraneousArguments(args);
-            printf("Running in the background...\n");
-            backgroundProcess = fork();
-            printf("backgroundProcess: %d", backgroundProcess);
-            if(backgroundProcess < 0) {
-                printf("Forking failed\n");
-            }
-            if(backgroundProcess == 0) {
-                execvp(command, args);
-                waitpid(-1, &status, WNOHANG | WUNTRACED);
-                exit(0);
-            }
-        }
-        execvp(command, args);
-    }
 
-    free(command);
-    free(args);
+        execvp(command, args);
+        waitpid(pid, &status, 0);
+    }
+    if(isChild != 1 && wait == 1) {
+        waitpid(pid, &status, 0);
+    }
 }
