@@ -1,0 +1,5 @@
+# Directories to ignore
+/*_XCode
+
+# File types to ignore
+*.o

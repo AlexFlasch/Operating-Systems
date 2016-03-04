@@ -9,4 +9,8 @@ int isFileCommand(char **args);
 
 int isBackgroundCommand(char **args);
 
+char* getFilename(char **args);
+
+char** stripExtraneousArguments(char **args);
+
 #endif

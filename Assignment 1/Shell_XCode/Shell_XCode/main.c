@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
 
 #include "CommandUtils.h"
 
@@ -40,7 +39,7 @@ void runCommand(char *command, char **args) {
     int status;
 
     if(pid < 0) {
-        printf("Forking the child process has failed\n");
+        printf("Forking the child process has failed");
         exit(1);
     }
 
@@ -52,9 +51,9 @@ void runCommand(char *command, char **args) {
     int wait = 1;
     int toFile = 0;
 
-    if(isBackgroundCommand(args) == 1) {
-        wait = 0;
-    }
+    // if(isBackgroundCommand(args) == 1) {
+    //     wait = 0;
+    // }
 
     // printf("args: ");
     //
@@ -64,31 +63,20 @@ void runCommand(char *command, char **args) {
     //     ++i;
     // }
 
-    // printf("toFile: %d\n", isFileCommand(args));
+    printf("toFile: %d\n", isFileCommand(args));
     if(isFileCommand(args) == 1) {
         toFile = 1;
     }
 
     if(isChild == 1) {
         if(toFile == 1) {
-            printf("Redirecting to file...\n");
-            char *filename = getFilename(args);
-            printf("filename: %s\n", filename);
+            printf("Redirecting to file...");
+        }
 
-            args = stripExtraneousArguments(args);
-            int fileStream = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-            dup2(fileStream, 1);
-            close(fileStream);
-            execvp(command, args);
-        }
-        else {
-            execvp(command, args);
-        }
+        execvp(command, args);
     }
     else {
-        if(wait == 1) {
-            waitpid(pid, &status, 0);
-        }
+        waitpid(pid, &status, 0);
     }
 
     free(command);
