@@ -3,8 +3,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
 
 #include "CommandUtils.h"
+
+pid_t pid;
+pid_t backgroundProcess;
+int waitStatus;
 
 void runCommand(char *command, char **args);
 
@@ -36,7 +42,7 @@ void runCommand(char *command, char **args) {
         exit(0);
     }
 
-    pid_t pid = fork();
+    pid = fork();
     int status;
 
     if(pid < 0) {
@@ -71,7 +77,6 @@ void runCommand(char *command, char **args) {
 
     if(isChild == 1) {
         if(toFile == 1) {
-            printf("Redirecting to file...\n");
             char *filename = getFilename(args);
             printf("filename: %s\n", filename);
 
@@ -79,16 +84,27 @@ void runCommand(char *command, char **args) {
             int fileStream = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
             dup2(fileStream, 1);
             close(fileStream);
-            execvp(command, args);
         }
-        else {
-            execvp(command, args);
-        }
-    }
-    else {
         if(wait == 1) {
+            execvp(command, args);
+            printf("\n>> ");
             waitpid(pid, &status, 0);
         }
+        if(wait == 0) {
+            stripExtraneousArguments(args);
+            printf("Running in the background...\n");
+            backgroundProcess = fork();
+            printf("backgroundProcess: %d", backgroundProcess);
+            if(backgroundProcess < 0) {
+                printf("Forking failed\n");
+            }
+            if(backgroundProcess == 0) {
+                execvp(command, args);
+                waitpid(-1, &status, WNOHANG | WUNTRACED);
+                exit(0);
+            }
+        }
+        execvp(command, args);
     }
 
     free(command);
