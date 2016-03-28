@@ -3,3 +3,5 @@
 
 # File types to ignore
 *.o
+
+*.zip

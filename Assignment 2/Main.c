@@ -10,6 +10,8 @@ int numOfStudents;
 int numOfChairs;
 int numOfVisits;
 
+int studentsFinished;
+
 int currAvailChairs;
 int chairIsAvailable;
 
@@ -17,8 +19,11 @@ int tutorIsBusy;
 int chairsAreBusy;
 pthread_cond_t tutorCondition;
 pthread_cond_t chairCondition;
+pthread_cond_t studentCondition;
 pthread_mutex_t tutorLock;
 pthread_mutex_t chairLock;
+
+pthread_t tutorThread;
 
 int tutorThreadId;
 pthread_t tutorThread;
@@ -37,6 +42,8 @@ typedef struct {
 Student *students;
 
 void simulateStudent(void *student);
+
+void waitForStudents();
 
 int main(int argc, char *argv[]) {
     // set up execution parameters
@@ -58,10 +65,13 @@ int main(int argc, char *argv[]) {
 
     pthread_cond_init(&tutorCondition, NULL);
     pthread_cond_init(&chairCondition, NULL);
+    pthread_cond_init(&studentCondition, NULL);
     pthread_mutex_init(&tutorLock, NULL);
     pthread_mutex_init(&chairLock, NULL);
     tutorIsBusy = FALSE;
     chairsAreBusy = FALSE;
+
+    studentsFinished = 0;
 
     // begin execution
 
@@ -82,7 +92,7 @@ int main(int argc, char *argv[]) {
         students[studentSize * i] = *s;
     }
 
-    // tutorThreadId = pthread_create(&tutorThread, NULL, (void *) &simulateTutor, NULL);
+    pthread_create(&tutorThread, NULL, (void *) &waitForStudents, NULL);
 
     // create student threads
     for(i = 0; i < numOfStudents; i++) {
@@ -93,13 +103,9 @@ int main(int argc, char *argv[]) {
         s.threadId = pthread_create(&students[i].thread, NULL, (void *) &simulateStudent, (void *) s.number);
     }
 
-    for(i = 0; i < numOfStudents; i++) {
-        Student s = students[studentSize * i];
+    pthread_join(tutorThread, NULL);
 
-        pthread_join(s.thread, NULL);
-
-        printf("Student %d has finished their assignment.\n", s.number);
-    }
+    return 0;
 }
 
 void simulateStudent(void *studentId) {
@@ -109,54 +115,48 @@ void simulateStudent(void *studentId) {
     // printf("Starting simulation of student %d.\n", s.number);
 
     while(s.sessionsCompleted < numOfVisits) {
-        int sleepTime = rand() % 5;
-
         printf("Student %d is working on their assignment.\n", s.number);
-        sleep(sleepTime);
+        sleep(rand() % 5);
         printf("Student %d needs help on their assignment.\n", s.number);
 
-        printf("Current available chairs = %d\n", currAvailChairs);
         if((numOfChairs - currAvailChairs) >= 0 && currAvailChairs > 0) {
             while(chairsAreBusy) {
                 pthread_cond_wait(&chairCondition, &chairLock);
             }
 
-            printf("Student %d is taking a seat.\n", s.number);
-
-            pthread_mutex_lock(&chairLock);
             chairsAreBusy = TRUE;
-            currAvailChairs--;
-            pthread_mutex_unlock(&chairLock);
+            --currAvailChairs;
+            printf("Student %d is taking a seat.\n", s.number);
             chairsAreBusy = FALSE;
-            pthread_cond_broadcast(&chairCondition);
+            pthread_cond_signal(&chairCondition);
+            pthread_mutex_unlock(&chairLock);
 
             while(tutorIsBusy) {
                 pthread_cond_wait(&tutorCondition, &tutorLock);
-                printf("Student %d is still waiting on the tutor.\n", s.number);
             }
-
-            pthread_mutex_lock(&tutorLock);
-            tutorIsBusy = TRUE;
 
             while(chairsAreBusy) {
                 pthread_cond_wait(&chairCondition, &chairLock);
             }
 
-            pthread_mutex_lock(&chairLock);
             chairsAreBusy = TRUE;
-            currAvailChairs++;
-            pthread_mutex_unlock(&chairLock);
+            ++currAvailChairs;
+            printf("Student %d getting up from chair.\n", s.number);
             chairsAreBusy = FALSE;
-            pthread_cond_broadcast(&chairCondition);
+            pthread_cond_signal(&chairCondition);
+            pthread_mutex_unlock(&chairLock);
+
+            tutorIsBusy = TRUE;
 
             // getting help...
             printf("Student %d is getting help.\n", s.number);
-            sleep(sleepTime);
+            fflush(stdout);
+            sleep(rand() % 5);
 
-            pthread_mutex_unlock(&tutorLock);
             tutorIsBusy = FALSE;
-
-            pthread_cond_broadcast(&tutorCondition);
+            printf("Student %d is done getting help.\n", s.number);
+            pthread_cond_signal(&tutorCondition);
+            pthread_mutex_unlock(&tutorLock);
 
             s.sessionsCompleted++;
 
@@ -165,6 +165,31 @@ void simulateStudent(void *studentId) {
         else {
             printf("Student %d was unable to find a seat.\n", s.number);
         }
+    }
+
+    printf("Student %d has finished their assignment.\n", s.number);
+    studentsFinished++;
+
+    if(studentsFinished == numOfStudents) {
+        pthread_cond_signal(&studentCondition);
+    }
+
+    pthread_exit(0);
+}
+
+void waitForStudents() {
+
+    while(studentsFinished != numOfStudents) {
+        pthread_cond_wait(&studentCondition, &tutorLock);
+    }
+
+    int studentSize = sizeof(Student);
+
+    int i;
+    for(i = 0; i < numOfStudents; i++) {
+        Student s = students[studentSize * i];
+
+        pthread_join(s.thread, NULL);
     }
 
     pthread_exit(0);
