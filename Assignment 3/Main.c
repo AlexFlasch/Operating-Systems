@@ -137,7 +137,7 @@ int processesAreDone(Process *processes) {
 void runFifo(Process *processes) {
     int currentTime = 0;
     int busyTime = 0;
-    Process *fifoProcesses = malloc(sizeof(processes));
+    Process *fifoProcesses = malloc(sizeof(Process) * numProcesses);
 
     int i;
     for(i = 0; i < numProcesses; i++) {
@@ -212,7 +212,7 @@ void runFifo(Process *processes) {
 void runSjf(Process *processes) {
     int currentTime = 0;
     int busyTime = 0;
-    Process *sjfProcesses = malloc(sizeof(processes));
+    Process *sjfProcesses = malloc(sizeof(Process) * numProcesses);
 
     int i;
     for(i = 0; i < numProcesses; i++) {
