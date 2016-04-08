@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -50,9 +51,9 @@ void runFifo(Process *processes);
 void runSjf(Process *processes);
 void runRoundRobin(Process *processes);
 void runMfq(Process *processes);
-Process getProcessOfPriority(Process *processes, int priority);
 int compareArrivalTime(Process *s1, Process *s2);
 int compareBurstTime(Process *s1, Process *s2);
+void outputToCsv();
 void printProcessInfo(Process p);
 
 int main(int argc, char *argv[]) {
@@ -82,6 +83,9 @@ int main(int argc, char *argv[]) {
     printf("===== finished Round Robin =====\n\n");
     runMfq(processes);
     printf("===== finished MFQ =====\n\n");
+
+    outputToCsv();
+    printf("Results output to results.csv\n");
 }
 
 Process* generateProcesses(int num) {
@@ -360,10 +364,10 @@ void runRoundRobin(Process *processes) {
 void runMfq(Process *processes) {
     int currentTime = 0;
     int busyTime = 0;
-    int prio1Quantum = 2;
-    int prio2Quantum = 4;
-    int prio3Quantum = 8;
-    int prio4Quantum = 16;
+    int prio1Quantum = 1;
+    int prio2Quantum = 2;
+    int prio3Quantum = 4;
+    int prio4Quantum = 8;
     int randomResetTime = generateRandomIntInRange(100, 500);
     int currentQuantum = 0;
     Process *mfqProcesses = malloc(sizeof(Process) * numProcesses);
@@ -544,10 +548,6 @@ void runMfq(Process *processes) {
     printf("Utilization: %f\n", utilization);
 }
 
-Process getProcessOfPriority(Process *processes, int priority) {
-
-}
-
 int compareArrivalTime(Process *s1, Process *s2) {
     if(s1->arrivalTime < s2->arrivalTime)
         return -1;
@@ -562,6 +562,18 @@ int compareBurstTime(Process *s1, Process *s2) {
     else if(s1->burstTime > s2->burstTime)
         return 1;
     else return 0;
+}
+
+void outputToCsv() {
+    FILE* fileStream = fopen("results.csv", "w+");
+
+    fputs("\t,FIFO,SJF,RR,MFQ\n", fileStream);
+    fprintf(fileStream, "Avg Turnaround,%.2f,%.2f,%.2f,%.2f\n", r.fifoTurnaround, r.sjfTurnaround, r.rrTurnaround, r.mfqTurnaround);
+    fprintf(fileStream, "Avg Normal Turnaround,%.2f,%.2f,%.2f,%.2f\n", r.fifoNormTurnaround, r.sjfNormTurnaround, r.rrNormTurnaround, r.mfqNormTurnaround);
+    fprintf(fileStream, "Avg Latency,%.2f,%.2f,%.2f,%.2f\n", r.fifoLatency, r.sjfLatency, r.rrLatency, r.mfqLatency);
+    fprintf(fileStream, "Avg Utilization,%.2f,%.2f,%.2f,%.2f\n", r.fifoUtilization, r.sjfUtilization, r.rrUtilization, r.mfqUtilization);
+
+    fclose(fileStream);
 }
 
 // for debugging purposes
