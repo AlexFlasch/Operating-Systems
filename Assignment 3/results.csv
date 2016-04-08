@@ -1,5 +1,5 @@
 	,FIFO,SJF,RR,MFQ
-Avg Turnaround,364.52,283.22,18196.00,18196.00
-Avg Normal Turnaround,33.82,17.00,1648.00,1648.00
-Avg Latency,350.96,269.66,17518.00,17518.00
-Avg Utilization,1.00,0.99,1.00,1.00
+Avg Turnaround,430.48,273.58,20007.00,1746.00
+Avg Normal Turnaround,53.56,14.28,2138.00,145.00
+Avg Latency,415.78,258.88,19272.00,1011.00
+Avg Utilization,1.00,0.99,1.00,0.99

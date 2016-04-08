@@ -51,6 +51,7 @@ void runFifo(Process *processes);
 void runSjf(Process *processes);
 void runRoundRobin(Process *processes);
 void runMfq(Process *processes);
+Process getHighestPriorityProcess(Process *processes);
 int compareArrivalTime(Process *s1, Process *s2);
 int compareBurstTime(Process *s1, Process *s2);
 void outputToCsv();
@@ -95,7 +96,7 @@ Process* generateProcesses(int num) {
     for(i = 0; i < num; i++) {
         Process p;
         p.arrivalTime = generateRandomIntInRange(0, 10);
-        p.burstTime = generateRandomIntInRange(3, 25);
+        p.burstTime = generateRandomIntInRange(3, 30);
         p.name = i;
         p.done = 0;
         p.startTime = 0;
@@ -202,10 +203,10 @@ void runFifo(Process *processes) {
     r.fifoUtilization = utilization;
 
     printf("----- FIFO stats -----\n");
-    printf("Average Turnaround: %f\n", avgTurnaroundTime);
-    printf("Average Normalized Turnaround: %f\n", avgNormTurnaroundTime);
-    printf("Average Latency: %f\n", avgLatency);
-    printf("Utilization: %f\n", utilization);
+    printf("Average Turnaround: %f\n", r.fifoTurnaround);
+    printf("Average Normalized Turnaround: %f\n", r.fifoNormTurnaround);
+    printf("Average Latency: %f\n", r.fifoLatency);
+    printf("Utilization: %f\n", r.fifoUtilization);
 }
 
 void runSjf(Process *processes) {
@@ -277,10 +278,10 @@ void runSjf(Process *processes) {
     r.sjfUtilization = utilization;
 
     printf("----- SJF stats -----\n");
-    printf("Average Turnaround: %f\n", avgTurnaroundTime);
-    printf("Average Normalized Turnaround: %f\n", avgNormTurnaroundTime);
-    printf("Average Latency: %f\n", avgLatency);
-    printf("Utilization: %f\n", utilization);
+    printf("Average Turnaround: %f\n", r.sjfTurnaround);
+    printf("Average Normalized Turnaround: %f\n", r.sjfNormTurnaround);
+    printf("Average Latency: %f\n", r.sjfLatency);
+    printf("Utilization: %f\n", r.sjfUtilization);
 }
 
 void runRoundRobin(Process *processes) {
@@ -355,10 +356,10 @@ void runRoundRobin(Process *processes) {
     r.rrUtilization = utilization;
 
     printf("----- Round Robin stats -----\n");
-    printf("Average Turnaround: %f\n", avgTurnaroundTime);
-    printf("Average Normalized Turnaround: %f\n", avgNormTurnaroundTime);
-    printf("Average Latency: %f\n", avgLatency);
-    printf("Utilization: %f\n", utilization);
+    printf("Average Turnaround: %f\n", r.rrTurnaround);
+    printf("Average Normalized Turnaround: %f\n", r.rrNormTurnaround);
+    printf("Average Latency: %f\n", r.rrLatency);
+    printf("Utilization: %f\n", r.rrUtilization);
 }
 
 void runMfq(Process *processes) {
@@ -375,11 +376,21 @@ void runMfq(Process *processes) {
     int i;
     for(i = 0; i < numProcesses; i++) {
         mfqProcesses[i] = processes[i];
+        // printProcessInfo(mfqProcesses[i]);
     }
 
     // run processes
     for(i = 0; !processesAreDone(mfqProcesses); i++) {
-        Process p = mfqProcesses[i % numProcesses];
+        Process p = getHighestPriorityProcess(mfqProcesses);
+        // printProcessInfo(p);
+
+        // if the process hasn't arrived yet, ignore it and go to the next one
+        if(p.arrivalTime > currentTime) {
+            // printf("skipping\n");
+            currentTime++;
+            continue;
+        }
+
         if(i <= numProcesses) {
             p.startTime = currentTime;
             p.latency = currentTime - p.arrivalTime;
@@ -391,20 +402,21 @@ void runMfq(Process *processes) {
         if(currentTime >= randomResetTime) {
             int j;
             for(j = 0; j < numProcesses; j++) {
-                mfqProcesses[i].priority = 1;
+                mfqProcesses[j].priority = 1;
             }
+
+            // printf("============ RESET ALL PROCESSES TO PRIO 1 ============\n");
         }
 
         if(p.priority == 1) {
-            while(!p.done || currentQuantum < prio1Quantum) {
+            // printf("running prio 1 process.\n");
+            while(!p.done && currentQuantum < prio1Quantum) {
                 // check to see if current process has finished
                 if(p.amountDone >= p.burstTime) {
                     p.done = TRUE;
                     p.finishTime = currentTime;
                     p.turnaround = p.latency + p.burstTime;
                     p.normTurnaround = (double) (p.turnaround / p.burstTime);
-
-                    mfqProcesses[p.name] = p;
                 }
 
                 // process hasn't arrived yet
@@ -423,21 +435,21 @@ void runMfq(Process *processes) {
 
             // if process hasn't finished in prio 1, bump to next prio
             if(!p.done) {
+                // printf("bumping process to prio 2\n");
                 p.priority = 2;
             }
 
             currentQuantum = 0;
         }
         else if(p.priority == 2) {
-            while(!p.done || currentQuantum < prio2Quantum) {
+            // printf("running prio 2 process.\n");
+            while(!p.done && currentQuantum < prio2Quantum) {
                 // check to see if current process has finished
                 if(p.amountDone >= p.burstTime) {
                     p.done = TRUE;
                     p.finishTime = currentTime;
                     p.turnaround = p.latency + p.burstTime;
                     p.normTurnaround = (double) (p.turnaround / p.burstTime);
-
-                    mfqProcesses[p.name] = p;
                 }
 
                 // process hasn't arrived yet
@@ -455,25 +467,27 @@ void runMfq(Process *processes) {
 
             // if process hasn't finished in prio 1, bump to next prio
             if(!p.done) {
+                // printf("bumping process to prio 3\n");
                 p.priority = 3;
             }
 
             currentQuantum = 0;
         }
         else if(p.priority == 3) {
-            while(!p.done || currentQuantum < prio3Quantum) {
+            // printf("running prio 3 process.\n");
+            while(!p.done && currentQuantum < prio3Quantum) {
                 // check to see if current process has finished
                 if(p.amountDone >= p.burstTime) {
+                    // printf("Process finished.\n");
                     p.done = TRUE;
                     p.finishTime = currentTime;
                     p.turnaround = p.latency + p.burstTime;
                     p.normTurnaround = (double) (p.turnaround / p.burstTime);
-
-                    mfqProcesses[p.name] = p;
                 }
 
                 // process hasn't arrived yet
                 if(p.arrivalTime >= currentTime) {
+                    // printf("skipping process.\n");
                     currentTime++;
                     break; // go to next process since it hasn't arrived
                 }
@@ -482,27 +496,28 @@ void runMfq(Process *processes) {
                     currentTime++;
                     busyTime++;
                     p.amountDone++;
+                    // printf("amountDone: %d\n", p.amountDone);
                 }
                 currentQuantum++;
             }
 
             // if process hasn't finished in prio 1, bump to next prio
             if(!p.done) {
+                // printf("bumping process to prio 4\n");
                 p.priority = 4;
             }
 
             currentQuantum = 0;
         }
         else {
-            while(!p.done || currentQuantum < prio4Quantum) {
+            // printf("running prio 4 process.\n");
+            while(!p.done && currentQuantum < prio4Quantum) {
                 // check to see if current process has finished
                 if(p.amountDone >= p.burstTime) {
                     p.done = TRUE;
                     p.finishTime = currentTime;
                     p.turnaround = p.latency + p.burstTime;
                     p.normTurnaround = (double) (p.turnaround / p.burstTime);
-
-                    mfqProcesses[p.name] = p;
                 }
 
                 // process hasn't arrived yet
@@ -521,6 +536,9 @@ void runMfq(Process *processes) {
 
             currentQuantum = 0;
         }
+
+        mfqProcesses[p.name] = p;
+        // printProcessInfo(mfqProcesses[p.name]);
     }
 
     double avgTurnaroundTime = 0;
@@ -542,10 +560,66 @@ void runMfq(Process *processes) {
     r.mfqUtilization = utilization;
 
     printf("----- MFQ stats -----\n");
-    printf("Average Turnaround: %f\n", avgTurnaroundTime);
-    printf("Average Normalized Turnaround: %f\n", avgNormTurnaroundTime);
-    printf("Average Latency: %f\n", avgLatency);
-    printf("Utilization: %f\n", utilization);
+    printf("Average Turnaround: %f\n", r.mfqTurnaround);
+    printf("Average Normalized Turnaround: %f\n", r.mfqNormTurnaround);
+    printf("Average Latency: %f\n", r.mfqLatency);
+    printf("Utilization: %f\n", r.mfqLatency);
+}
+
+Process getHighestPriorityProcess(Process *processes) {
+    int i;
+    for(i = 0; i < numProcesses; i++) {
+        Process p = processes[i];
+
+        // if the process is done, ignore it, check for others
+        if(p.done) {
+            continue;
+        }
+
+        if(p.priority == 1) {
+            // printf("highest process: 1\n");
+            return p;
+        }
+    }
+    // nothing in prio 1, search for prio 2
+    for(i = 0; i < numProcesses; i++) {
+        Process p = processes[i];
+
+        if(p.done) {
+            continue;
+        }
+
+        if(p.priority == 2) {
+            // printf("highest process: 2\n");
+            return p;
+        }
+    }
+    // nothing in prio 2, search for prio 3
+    for(i = 0; i < numProcesses; i++) {
+        Process p = processes[i];
+
+        if(p.done) {
+            continue;
+        }
+
+        if(p.priority == 3) {
+            // printf("highest process: 3\n");
+            return p;
+        }
+    }
+    // nothing in prio 3, search for prio 4
+    for(i = 0; i < numProcesses; i++) {
+        Process p = processes[i];
+
+        if(p.done) {
+            continue;
+        }
+
+        if(p.priority == 4) {
+            // printf("highest process: 4\n");
+            return p;
+        }
+    }
 }
 
 int compareArrivalTime(Process *s1, Process *s2) {
@@ -585,6 +659,7 @@ void printProcessInfo(Process p) {
     printf("amountDone: %d\n", p.amountDone);
     printf("latency: %d\n", p.latency);
     printf("finishTime: %d\n", p.finishTime);
+    printf("priority: %d\n", p.priority);
     printf("name: %d\n", p.name);
     printf("done: %d\n\n", p.done);
 }
